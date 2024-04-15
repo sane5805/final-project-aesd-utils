@@ -1,4 +1,4 @@
-# ECEN 5713 - Advanced Embedded Software Development - Final Project
+# ECEN 5713 - Advanced Embedded Software Development - Final Project - Packages
 This repository contains the Packages for Temperature sensor and Socket Communication
 
 ## Project Overview:
