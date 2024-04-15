@@ -1,7 +1,7 @@
 /************************************************************************************
  * @name: client.c
  * @brief: A socket program for a client in stream mode.
- * @author: [Your Name]
+ * @author: Saurav Negi
  * @reference: https://docs.microsoft.com/en-us/windows/win32/winsock/creating-a-basic-winsock-application
  ***********************************************************************************/
 
