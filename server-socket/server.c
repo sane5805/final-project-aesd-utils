@@ -13,31 +13,45 @@
 #include <sys/socket.h> 
 #include <sys/types.h> 
 #include <unistd.h> // read(), write(), close()
+#include <mqueue.h> // Include POSIX message queue library
+#include <fcntl.h>
+#include <errno.h>
 #define MAX 80 
 #define PORT 8080 
 #define SA struct sockaddr 
    
+   
+mqd_t mqd;
+int sockfd, connfd;
+struct mq_attr attr;
+
 // Function designed for chat between client and server. 
 void func(int connfd) 
 { 
-    char buff[MAX]; 
+    char buff[sizeof(double)];
+    double temp;
+    char temp_value_for_client[60]; 
+    unsigned int msg_prio;
+
     int n; 
     // infinite loop for chat 
     for (;;) { 
-        bzero(buff, MAX); 
+        bzero(buff, sizeof(double)); 
    
+        if (mq_receive(mqd, buff, sizeof(double), &msg_prio) == -1) {
+            fprintf(stderr, "Failed to receive message from queue: %s\n", strerror(errno));
+        } 
         // read the message from client and copy it in buffer 
-        read(connfd, buff, sizeof(buff)); 
+
+        memcpy(&temp, buff, sizeof(double));
+        //read(connfd, buff, sizeof(buff)); 
         // print buffer which contains the client contents 
-        printf("From client: %s\t To client : ", buff); 
-        bzero(buff, MAX); 
-        n = 0; 
-        // copy server message in the buffer 
-        while ((buff[n++] = getchar()) != '\n') 
-            ; 
+
+        sprintf(temp_value_for_client, "temp = %0.2lf", temp);
+	
+	// and send that buffer to client
+        send(connfd, temp_value_for_client, strlen(temp_value_for_client) + 1, 0);
    
-        // and send that buffer to client 
-        write(connfd, buff, sizeof(buff)); 
    
         // if msg contains "Exit" then server exit and chat ended. 
         if (strncmp("exit", buff, 4) == 0) { 
@@ -50,7 +64,7 @@ void func(int connfd)
 // Driver function 
 int main() 
 { 
-    int sockfd, connfd, len; 
+    int len; 
     struct sockaddr_in servaddr, cli; 
    
     // socket create and verification 
@@ -61,6 +75,13 @@ int main()
     } 
     else
         printf("Socket successfully created..\n"); 
+
+    if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &(int){1}, sizeof(int)) == -1)
+    {
+        printf("\n\rError in setting up socket options. Error: %s", strerror(errno)); 
+        exit(0); 
+    }
+    
     bzero(&servaddr, sizeof(servaddr)); 
    
     // assign IP, PORT 
@@ -81,9 +102,17 @@ int main()
         printf("Listen failed...\n"); 
         exit(0); 
     } 
-    else
+    else {
         printf("Server listening..\n"); 
-    len = sizeof(cli); 
+    	len = sizeof(cli); 
+    }
+
+    // message queue opening for retriving data from temperature sensor
+    mqd = mq_open("/temperature_queue", O_RDWR);
+    if (mqd == -1) {
+        fprintf(stderr, "Failed to open the queue: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
    
     // Accept the data packet from client and verification 
     connfd = accept(sockfd, (SA*)&cli, (socklen_t *)&len); 
@@ -99,4 +128,9 @@ int main()
    
     // After chatting close the socket 
     close(sockfd); 
+    close(connfd); 
+
+    // Close message queue
+    mq_close(mqd);
+    mq_unlink("/temperature_queue");
 }
