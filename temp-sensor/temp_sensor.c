@@ -21,6 +21,9 @@
 #include <linux/i2c.h> // Include this for I2C_SMBUS_READ and I2C_SMBUS_WORD_DATA
 // Assuming i2c_smbus_data is defined in linux/i2c-dev.h, but it might be in another header.
 #include <linux/i2c-dev.h> 
+#include <mqueue.h> // Include POSIX message queue library
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 
 #define I2C_DEV_PATH			"/dev/i2c-1"
@@ -38,8 +41,13 @@ typedef union i2c_smbus_data i2c_data;
 // Declare file descriptor for I2C device
 int fdev;
 
+mqd_t mq;
+
+
 // Function to initialize I2C communication and message queue
 void initialize() {
+
+    struct mq_attr attr;
 
     // Open I2C device
     fdev = open(I2C_DEV_PATH, O_RDWR);
@@ -47,6 +55,15 @@ void initialize() {
     if (fdev < 0) {
 	fprintf(stderr, "Failed to open I2C interface %s Error: %s\n", I2C_DEV_PATH, strerror(errno));
 	exit(EXIT_FAILURE);
+    }
+    attr.mq_maxmsg = 10;
+    attr.mq_msgsize = sizeof(double);
+
+    // Open or create the message queue
+    mq = mq_open("/temperature_queue", O_CREAT | O_RDWR, S_IRWXU, &attr);
+    if (mq == (mqd_t)-1) {
+        fprintf(stderr, "Failed to open the queue: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -93,7 +110,18 @@ void read_temperature() {
  	temp = temp - 273.15;
 	    
 	// print result
-	fprintf(stdout, "\n temp = %f \n", temp);
+	//fprintf(stdout, "\n temp = %f \n", temp);
+
+
+	char temp_val_for_server[sizeof(double)];
+	
+	bzero(temp_val_for_server, sizeof(double));
+        memcpy(temp_val_for_server, &temp, sizeof(double));
+	
+    	if(mq_send(mq, temp_val_for_server, sizeof(double), 1) == -1)
+    	{
+    	    printf("\n\rError in sending data via message queue. Error: %s", strerror(errno));
+    	}
 
         // Introduce delay
         usleep(SLEEP_DURATION);
