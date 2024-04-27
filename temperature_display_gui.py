@@ -1,3 +1,17 @@
+"""
+File: temperature_display_gui.py
+
+Description:
+    This script implements a simple graphical user interface (GUI) using Tkinter to display temperature data received from a server.
+    It establishes a client-side socket connection to the server and continuously receives temperature data, updating the GUI accordingly.
+
+Author: Saurav Negi
+
+Note:
+    Replace the server's IP address and port in the 'connect_to_server' function with your server's details.
+"""
+
+# Required libraries
 import tkinter as tk
 import socket
 import threading
