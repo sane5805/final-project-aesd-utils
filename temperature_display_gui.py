@@ -7,6 +7,8 @@ Description:
 
 Author: Saurav Negi
 
+Reference: chat-gpt
+
 Note:
     Replace the server's IP address and port in the 'connect_to_server' function with your server's details.
 """
