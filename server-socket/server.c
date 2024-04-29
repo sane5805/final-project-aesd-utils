@@ -75,7 +75,9 @@ int main()
     } 
     else
         printf("Socket successfully created..\n"); 
-
+    
+    // Reuse the address and port, allows the server to restart without 
+    // waiting for the previous session to terminate completely.
     if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &(int){1}, sizeof(int)) == -1)
     {
         printf("\n\rError in setting up socket options. Error: %s", strerror(errno)); 
