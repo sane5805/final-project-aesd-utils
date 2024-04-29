@@ -92,6 +92,8 @@ int main()
     servaddr.sin_port = htons(PORT); 
    
     // Binding newly created socket to given IP and verification 
+    //  binds the socket to the server address (servaddr), which 
+    // includes the IP address and port number.
     if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) { 
         printf("socket bind failed...\n"); 
         exit(0); 
